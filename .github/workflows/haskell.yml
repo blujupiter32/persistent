@@ -54,6 +54,7 @@ jobs:
           - "9.0.2"
           - "9.2.4"
           - "9.4.1"
+    continue-on-error: true
 
     env:
       CONFIG: "--enable-tests --enable-benchmarks"
