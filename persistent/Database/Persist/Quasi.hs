@@ -577,9 +577,8 @@ The quasiquoter supports ordinary comments with @--@ and @#@.
 Since @persistent-2.10.5.1@, it also supports documentation comments.
 The grammar for documentation comments is similar to Haskell's Haddock syntax, with a few restrictions:
 
-1. Only the @-- | @ form is allowed.
-2. You must put a space before and after the @|@ pipe character.
-3. The comment must be indented at the same level as the entity or field it documents.
+1. Only the single-line @-- | @ form is allowed.
+2. The comment must be indented at the same level as the entity or field it documents.
 
 An example of the field documentation is:
 

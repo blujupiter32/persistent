@@ -238,13 +238,15 @@ parseIndentationAmount txt =
 tokenize :: Text -> [Token]
 tokenize t
     | T.null t = []
-    | Just txt <- T.stripPrefix "-- | " t = [DocComment txt]
-    | "--" `T.isPrefixOf` t = [] -- Comment until the end of the line.
+    | Just comment <- dropSpaces <$> T.stripPrefix "--" t =
+        case dropSpaces <$> T.stripPrefix "|" comment of
+            Just doc -> [DocComment doc]
+            Nothing -> []
     | "#" `T.isPrefixOf` t = [] -- Also comment to the end of the line, needed for a CPP bug (#110)
     | T.head t == '"' = quotes (T.tail t) id
     | T.head t == '(' = parens 1 (T.tail t) id
     | isSpace (T.head t) =
-        tokenize (T.dropWhile isSpace t)
+        tokenize (dropSpaces t)
 
     -- support mid-token quotes and parens
     | Just (beforeEquals, afterEquals) <- findMidToken t
@@ -256,6 +258,9 @@ tokenize t
         let (token, rest) = T.break isSpace t
          in Token token : tokenize rest
   where
+    dropSpaces :: Text -> Text
+    dropSpaces = T.dropWhile isSpace
+
     findMidToken :: Text -> Maybe (Text, Text)
     findMidToken t' =
         case T.break (== '=') t' of
