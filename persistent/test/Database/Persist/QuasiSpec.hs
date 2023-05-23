@@ -229,17 +229,31 @@ spec = describe "Quasi" $ do
                     )
 
         describe "comments" $ do
-            it "recognizes one line" $ do
-                parseLine "-- | this is a comment" `shouldBe`
-                    Just
-                        ( Line 0
-                            [ DocComment "this is a comment"
-                            ]
-                        )
+            let packSpaces = T.pack . flip replicate ' ' . abs
 
-            it "works if comment is indented" $ do
-                parseLine "  -- | comment" `shouldBe`
-                    Just (Line 2 [DocComment "comment"])
+            prop "recognizes nonempty documentation comments" $ \iLen bLen aLen ->
+                classify (iLen /= 0) "indented" $
+                    let indent = packSpaces iLen
+                        before = packSpaces bLen
+                        after  = packSpaces aLen
+                        line   = T.concat [indent, "--", before, "|", after, "txt"]
+                     in parseLine line === Just (Line (abs iLen) [DocComment "txt"])
+
+            prop "recognizes empty documentation comments" $ \iLen bLen aLen ->
+                classify (iLen /= 0) "indented" $
+                    let indent = packSpaces iLen
+                        before = packSpaces bLen
+                        after  = packSpaces aLen
+                        line   = T.concat [indent, "--", before, "|", after]
+                     in parseLine line === Just (Line (abs iLen) [DocComment ""])
+
+            prop "discards comments without pipe in prefix" $ \iLen aLen hasText ->
+                classify (iLen /= 0) "indented" . classify hasText "has text" $
+                    let indent = packSpaces iLen
+                        after  = packSpaces aLen
+                        prefix = T.concat [indent, "--", after]
+                        line   = if hasText then prefix <> "txt" else prefix
+                     in parseLine line === Nothing
 
     describe "parse" $ do
         let subject =
