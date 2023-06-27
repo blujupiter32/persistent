@@ -92,6 +92,8 @@ library
         Database.Persist.Class.PersistField
         Database.Persist.Class.PersistStore
 
+        Test.HaddockExample
+
     other-modules:   
         Database.Persist.Types.Base
 
