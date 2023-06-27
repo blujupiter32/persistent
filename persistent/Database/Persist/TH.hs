@@ -1217,9 +1217,8 @@ dataTypeDec mps entityMap entDef = do
     case entityComments (unboundEntityDef entDef) of
         Just doc
             | mpsEntityHaddocks mps -> do
-                let namedFields = names `zip` unboundEntityFields entDef
-                forM_ namedFields $ \(name, field) -> do
-                    case unboundFieldComments field of
+                forM_ cols $ \((name, _, _), maybeComments) -> do
+                    case maybeComments of
                         Just comment -> putDoc (DeclDoc name) (unpack comment)
                         Nothing -> pure ()
                 withDecDoc (unpack doc) (pure dec)
@@ -1252,7 +1251,7 @@ dataTypeDec mps entityMap entDef = do
         | otherwise =
             (mkEntityDefName entDef, [])
 
-    cols :: [VarBangType]
+    cols :: [(VarBangType, Maybe Text)]
     cols = do
         fieldDef <- getUnboundFieldDefs entDef
         let
@@ -1264,11 +1263,13 @@ dataTypeDec mps entityMap entDef = do
                 else notStrict
             fieldIdType =
                 maybeIdType mps entityMap fieldDef Nothing Nothing
-        pure (recordNameE, strictness, fieldIdType)
+            fieldComments =
+                unboundFieldComments fieldDef
+        pure ((recordNameE, strictness, fieldIdType), fieldComments)
 
     constrs
         | unboundEntitySum entDef = fmap sumCon $ getUnboundFieldDefs entDef
-        | otherwise = [RecC (mkEntityDefName entDef) cols]
+        | otherwise = [RecC (mkEntityDefName entDef) (map fst cols)]
 
     sumCon fieldDef = NormalC
         (sumConstrName mps entDef fieldDef)
