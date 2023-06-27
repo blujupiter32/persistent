@@ -1219,7 +1219,7 @@ dataTypeDec mps entityMap entDef = do
             | mpsEntityHaddocks mps -> do
                 forM_ cols $ \((name, _, _), maybeComments) -> do
                     case maybeComments of
-                        Just comment -> putDoc (DeclDoc name) (unpack comment)
+                        Just comment -> addModFinalizer $ putDoc (DeclDoc name) (unpack comment)
                         Nothing -> pure ()
                 withDecDoc (unpack doc) (pure dec)
         _ -> pure dec
