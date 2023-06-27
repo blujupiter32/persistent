@@ -1216,7 +1216,13 @@ dataTypeDec mps entityMap entDef = do
 #if MIN_VERSION_template_haskell(2,18,0)
     case entityComments (unboundEntityDef entDef) of
         Just doc
-            | mpsEntityHaddocks mps -> withDecDoc (unpack doc) (pure dec)
+            | mpsEntityHaddocks mps -> do
+                let namedFields = names `zip` unboundEntityFields entDef
+                forM_ namedFields $ \(name, field) -> do
+                    case unboundFieldComments field of
+                        Just comment -> putDoc (DeclDoc name) (unpack comment)
+                        Nothing -> pure ()
+                withDecDoc (unpack doc) (pure dec)
         _ -> pure dec
 #else
     pure dec
