@@ -12,7 +12,7 @@ import Language.Haskell.TH.Lift (lift)
 
 [d|
     commentModelDoc :: Maybe String
-    commentModelDoc = $(lift =<< getDoc (DeclDoc 'CommentModel))
+    commentModelDoc = $(lift =<< getDoc (DeclDoc ''CommentModel))
 
     commentFieldDoc :: Maybe String
     commentFieldDoc = $(lift =<< getDoc (DeclDoc 'commentModelName))
