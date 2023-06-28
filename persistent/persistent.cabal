@@ -147,6 +147,7 @@ test-suite test
       , silently
       , template-haskell         >= 2.4
       , text
+      , th-lift
       , th-lift-instances
       , time
       , transformers
@@ -174,6 +175,7 @@ test-suite test
         Database.Persist.TH.CompositeKeyStyleSpec
         Database.Persist.TH.DiscoverEntitiesSpec
         Database.Persist.TH.EmbedSpec
+        Database.Persist.TH.EntityHaddockSpec
         Database.Persist.TH.ForeignRefSpec
         Database.Persist.TH.ImplicitIdColSpec
         Database.Persist.TH.JsonEncodingSpec
