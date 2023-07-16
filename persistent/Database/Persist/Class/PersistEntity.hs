@@ -1,18 +1,18 @@
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# language PatternSynonyms #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE CPP #-}
 
 module Database.Persist.Class.PersistEntity
     ( PersistEntity (..)
@@ -65,7 +65,7 @@ import qualified Data.Aeson.KeyMap as AM
 import qualified Data.HashMap.Strict as AM
 #endif
 
-import GHC.Records
+import Data.Kind (Type)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (isJust)
 import Data.Text (Text)
@@ -75,8 +75,8 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as TB
 import GHC.Generics
 import GHC.OverloadedLabels
+import GHC.Records
 import GHC.TypeLits
-import Data.Kind (Type)
 
 import Database.Persist.Class.PersistField
 import Database.Persist.Names
