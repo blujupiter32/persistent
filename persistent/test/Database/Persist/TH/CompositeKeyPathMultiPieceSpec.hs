@@ -64,7 +64,7 @@ module Database.Persist.TH.CompositeKeyPathMultiPieceSpec (spec) where
 import Test.Hspec
 
 spec :: Spec
-spec = describe "CompositeKeyPathMultiPieceSpec" $ do
+spec = specify "CompositeKeyPathMultiPieceSpec" $ do
     pendingWith "DerivingVia not supported"
 
 #endif
