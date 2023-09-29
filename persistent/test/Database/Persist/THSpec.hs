@@ -50,7 +50,6 @@ import TemplateTestImports
 
 
 import qualified Database.Persist.TH.CommentSpec as CommentSpec
-import qualified Database.Persist.TH.CompositeKeyPathMultiPieceSpec as CompositeKeyPathMultiPieceSpec
 import qualified Database.Persist.TH.CompositeKeyStyleSpec as CompositeKeyStyleSpec
 import qualified Database.Persist.TH.DiscoverEntitiesSpec as DiscoverEntitiesSpec
 import qualified Database.Persist.TH.EmbedSpec as EmbedSpec
@@ -207,7 +206,6 @@ spec = describe "THSpec" $ do
     JsonEncodingSpec.spec
     CommentSpec.spec
     EntityHaddockSpec.spec
-    CompositeKeyPathMultiPieceSpec.spec
     CompositeKeyStyleSpec.spec
     describe "TestDefaultKeyCol" $ do
         let EntityIdField FieldDef{..} =
