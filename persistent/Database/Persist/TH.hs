@@ -1270,8 +1270,8 @@ dataTypeDec mps entityMap entDef = do
 
     stockClasses =
         Set.fromList (fmap mkName
-        [ "Eq", "Ord", "Show", "Read", "Bounded", "Enum", "Ix", "Generic", "Data", "Typeable"
-        ] <> [''Eq, ''Ord, ''Show, ''Read, ''Bounded, ''Enum, ''Ix, ''Generic, ''Data, ''Typeable
+        [ "Eq", "Ord", "Show", "Read", "Bounded", "Enum", "Ix", "Generic", "Data", "Typeable", "Lift"
+        ] <> [''Eq, ''Ord, ''Show, ''Read, ''Bounded, ''Enum, ''Ix, ''Generic, ''Data, ''Typeable, ''Lift
         ]
         )
 
@@ -1746,10 +1746,10 @@ mkKeyTypeDec mps entDef = do
 
     requirePersistentExtensions
 
-    -- Always use StockStrategy for Show/Read. This means e.g. (FooKey 1) shows as ("FooKey 1"), rather than just "1"
+    -- Always use StockStrategy for Lift/Show/Read. This means e.g. (FooKey 1) shows as ("FooKey 1"), rather than just "1"
     -- This is much better for debugging/logging purposes
     -- cf. https://github.com/yesodweb/persistent/issues/1104
-    let alwaysStockStrategyTypeclasses = [''Show, ''Read]
+    let alwaysStockStrategyTypeclasses = [''Lift, ''Show, ''Read]
         deriveClauses = fmap (\typeclass ->
             if (not useNewtype || typeclass `elem` alwaysStockStrategyTypeclasses)
                 then DerivClause (Just StockStrategy) [(ConT typeclass)]

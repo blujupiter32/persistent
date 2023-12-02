@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -34,6 +35,7 @@ import Data.Text (Text, unpack)
 import qualified Data.Text as T
 import Data.Void (Void)
 import GHC.Generics (Generic)
+import Language.Haskell.TH.Syntax (Lift)
 import Web.HttpApiData (FromHttpApiData, ToHttpApiData)
 import Web.PathPieces (PathPiece)
 
@@ -121,17 +123,17 @@ fieldDBName = fieldDB . persistFieldDef
 
 instance PersistCore SqlBackend where
     newtype BackendKey SqlBackend = SqlBackendKey { unSqlBackendKey :: Int64 }
-        deriving stock (Show, Read, Eq, Ord, Generic)
+        deriving stock (Show, Read, Eq, Ord, Generic, Lift)
         deriving newtype (Num, Integral, PersistField, PersistFieldSql, PathPiece, ToHttpApiData, FromHttpApiData, Real, Enum, Bounded, A.ToJSON, A.FromJSON)
 
 instance PersistCore SqlReadBackend where
     newtype BackendKey SqlReadBackend = SqlReadBackendKey { unSqlReadBackendKey :: Int64 }
-        deriving stock (Show, Read, Eq, Ord, Generic)
+        deriving stock (Show, Read, Eq, Ord, Generic, Lift)
         deriving newtype (Num, Integral, PersistField, PersistFieldSql, PathPiece, ToHttpApiData, FromHttpApiData, Real, Enum, Bounded, A.ToJSON, A.FromJSON)
 
 instance PersistCore SqlWriteBackend where
     newtype BackendKey SqlWriteBackend = SqlWriteBackendKey { unSqlWriteBackendKey :: Int64 }
-        deriving stock (Show, Read, Eq, Ord, Generic)
+        deriving stock (Show, Read, Eq, Ord, Generic, Lift)
         deriving newtype (Num, Integral, PersistField, PersistFieldSql, PathPiece, ToHttpApiData, FromHttpApiData, Real, Enum, Bounded, A.ToJSON, A.FromJSON)
 
 instance BackendCompatible SqlBackend SqlBackend where
