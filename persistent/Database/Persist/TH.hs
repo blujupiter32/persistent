@@ -44,6 +44,7 @@ module Database.Persist.TH
     , mpsGeneric
     , mpsPrefixFields
     , mpsFieldLabelModifier
+    , mpsAvoidHsKeyword
     , mpsConstraintLabelModifier
     , mpsEntityHaddocks
     , mpsEntityJSON
@@ -463,7 +464,9 @@ liftAndFixKeys mps emEntities entityMap unboundEnt =
         (fieldRef', sqlTyp') =
             case extractForeignRef entityMap ufd of
                 Just targetTable ->
-                    (lift (ForeignRef targetTable), liftSqlTypeExp (SqlTypeReference targetTable))
+                    let targetTableQualified =
+                          fromMaybe targetTable (guessFieldReferenceQualified ufd)
+                     in (lift (ForeignRef targetTable), liftSqlTypeExp (SqlTypeReference targetTableQualified))
                 Nothing ->
                     (lift NoReference, liftSqlTypeExp sqlTypeExp)
 
@@ -531,6 +534,30 @@ guessReference ft =
             , do
                 FTApp (FTTypeCon _ "Key") (FTTypeCon _ tableName) <- mft
                 pure tableName
+            , do
+                FTApp (FTTypeCon _ "Maybe") next <- mft
+                guessReferenceText (Just next)
+            ]
+
+guessFieldReferenceQualified :: UnboundFieldDef -> Maybe EntityNameHS
+guessFieldReferenceQualified = guessReferenceQualified . unboundFieldType
+
+guessReferenceQualified :: FieldType -> Maybe EntityNameHS
+guessReferenceQualified ft =
+    EntityNameHS <$> guessReferenceText (Just ft)
+  where
+    checkIdSuffix =
+        T.stripSuffix "Id"
+    guessReferenceText mft =
+        asum
+            [ do
+                FTTypeCon mmod (checkIdSuffix -> Just tableName) <- mft
+                -- handle qualified name.
+                pure $ maybe tableName (\qualName -> qualName <> "." <> tableName) mmod
+            , do
+                FTApp (FTTypeCon _ "Key") (FTTypeCon mmod tableName) <- mft
+                -- handle qualified name.
+                pure $ maybe tableName (\qualName -> qualName <> "." <> tableName) mmod
             , do
                 FTApp (FTTypeCon _ "Maybe") next <- mft
                 guessReferenceText (Just next)
@@ -1062,6 +1089,12 @@ data MkPersistSettings = MkPersistSettings
     -- Note: this setting is ignored if mpsPrefixFields is set to False.
     --
     -- @since 2.11.0.0
+    , mpsAvoidHsKeyword :: Text -> Text
+    -- ^ Customise function for field accessors applied only when the field name matches any of Haskell keywords.
+    --
+    -- Default: suffix "_".
+    --
+    -- @since 2.14.6.0
     , mpsConstraintLabelModifier :: Text -> Text -> Text
     -- ^ Customise the Constraint names using the entity and field name. The
     -- result should be a valid haskell type (start with an upper cased letter).
@@ -1165,6 +1198,7 @@ mkPersistSettings backend = MkPersistSettings
     , mpsGeneric = False
     , mpsPrefixFields = True
     , mpsFieldLabelModifier = (++)
+    , mpsAvoidHsKeyword = (++ "_")
     , mpsConstraintLabelModifier = (++)
     , mpsEntityHaddocks = False
     , mpsEntityJSON = Just EntityJSON
@@ -1712,10 +1746,10 @@ mkKeyTypeDec mps entDef = do
 
     requirePersistentExtensions
 
-    -- Always use StockStrategy for Show/Read. This means e.g. (FooKey 1) shows as ("FooKey 1"), rather than just "1"
+    -- Always use StockStrategy for Lift/Show/Read. This means e.g. (FooKey 1) shows as ("FooKey 1"), rather than just "1"
     -- This is much better for debugging/logging purposes
     -- cf. https://github.com/yesodweb/persistent/issues/1104
-    let alwaysStockStrategyTypeclasses = [''Show, ''Read]
+    let alwaysStockStrategyTypeclasses = [''Lift, ''Show, ''Read]
         deriveClauses = fmap (\typeclass ->
             if (not useNewtype || typeclass `elem` alwaysStockStrategyTypeclasses)
                 then DerivClause (Just StockStrategy) [(ConT typeclass)]
@@ -3013,11 +3047,7 @@ mkSymbolToFieldInstances mps entityMap (fixEntityDef -> ed) = do
                 mkEntityFieldConstr fieldHaskellName
         mkInstance fieldNameT fieldTypeT entityFieldConstr
 
-    mkey <-
-        case unboundPrimarySpec ed of
-            NaturalKey _ ->
-                pure []
-            _ -> do
+    mkey <- do
                 let
                     fieldHaskellName =
                         FieldNameHS "Id"
@@ -3152,7 +3182,7 @@ mkRecordName mps prefix entNameHS fieldNameHS =
         unFieldNameHS fieldNameHS
 
     avoidKeyword :: Text -> Text
-    avoidKeyword name = if name `Set.member` haskellKeywords then name ++ "_" else name
+    avoidKeyword name = if name `Set.member` haskellKeywords then mpsAvoidHsKeyword mps name else name
 
 haskellKeywords :: Set.Set Text
 haskellKeywords = Set.fromList
