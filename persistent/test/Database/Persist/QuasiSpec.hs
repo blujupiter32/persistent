@@ -233,20 +233,20 @@ spec = describe "Quasi" $ do
                 parseLine "-- | this is a comment" `shouldBe`
                     Just
                         ( Line 0
-                            [ DocComment "this is a comment"
+                            [ Comment PreDoc "this is a comment"
                             ]
                         )
             it "recognizes empty line" $ do
                 parseLine "-- |" `shouldBe`
                     Just
                         ( Line 0
-                            [ DocComment ""
+                            [ Comment PreDoc ""
                             ]
                         )
 
             it "works if comment is indented" $ do
                 parseLine "  -- | comment" `shouldBe`
-                    Just (Line 2 [DocComment "comment"])
+                    Just (Line 2 [Comment PreDoc "comment"])
 
     describe "parse" $ do
         let subject =
@@ -898,7 +898,7 @@ Baz
             let expected =
                     Line { lineIndent = 0, tokens = pure (Token "Foo") } :|
                     [ Line { lineIndent = 2, tokens = Token "x" :| [Token "X"] }
-                    , Line { lineIndent = 0, tokens = pure (DocComment "Hello") }
+                    , Line { lineIndent = 0, tokens = pure (Comment PreDoc "Hello") }
                     , Line { lineIndent = 0, tokens = pure (Token "Bar") }
                     , Line { lineIndent = 1, tokens = Token "name" :| [Token "String"] }
                     ]
@@ -916,7 +916,7 @@ Baz
                 expected =
                     Line { lineIndent = 2, tokens = pure (Token "Foo") } :|
                     [ Line { lineIndent = 4, tokens = Token "x" :| [Token "X"] }
-                    , Line { lineIndent = 2, tokens = pure (DocComment "Comment") }
+                    , Line { lineIndent = 2, tokens = pure (Comment PreDoc "Comment") }
                     , Line { lineIndent = 2, tokens = pure (Token "Bar") }
                     , Line { lineIndent = 4, tokens = Token "name" :| [Token "String"] }
                     ]
@@ -951,9 +951,9 @@ Baz
                     , "  name String"
                     ]
                 expected =
-                    Line { lineIndent = 0, tokens = [DocComment "Model"] } :|
+                    Line { lineIndent = 0, tokens = [Comment PreDoc "Model"] } :|
                     [ Line { lineIndent = 0, tokens = [Token "Foo"] }
-                    , Line { lineIndent = 2, tokens = [DocComment "Field"] }
+                    , Line { lineIndent = 2, tokens = [Comment PreDoc "Field"] }
                     , Line { lineIndent = 2, tokens = (Token <$> ["name", "String"]) }
                     ]
             preparse text `shouldBe` Just expected
@@ -972,7 +972,7 @@ Baz
             comment =
                 Line
                     { lineIndent = 0
-                    , tokens = pure (DocComment "comment")
+                    , tokens = pure (Comment PreDoc "comment")
                     }
         it "works" $ do
             associateLines
@@ -1114,7 +1114,7 @@ Baz
                 [ LinesWithComments
                     { lwcLines =
                         Line { lineIndent = 0, tokens = (Token "Foo") :| [] } :|
-                            [ Line { lineIndent = 2, tokens = pure (DocComment "Field") }
+                            [ Line { lineIndent = 2, tokens = pure (Comment PreDoc "Field") }
                             , Line { lineIndent = 2, tokens = Token "name" :| [Token "String"] }
                             ]
                     , lwcComments =

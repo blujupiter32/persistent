@@ -19,6 +19,7 @@ module Database.Persist.Quasi.Internal
     , upperCaseSettings
     , lowerCaseSettings
     , toFKNameInfixed
+    , CommentStyle (..)
     , Token (..)
     , Line (..)
     , preparse
@@ -214,20 +215,44 @@ preparse txt = do
     lns <- NEL.nonEmpty (T.lines txt)
     NEL.nonEmpty $ mapMaybe parseLine (NEL.toList lns)
 
+-- TEMP: ignore NonDoc and PostDoc comments
 parseLine :: Text -> Maybe Line
-parseLine txt = do
-    Line (parseIndentationAmount txt) <$> NEL.nonEmpty (tokenize txt)
+parseLine txt = fmap (Line (parseIndentationAmount txt))
+    . NEL.nonEmpty
+    . filter isPreDocOrToken
+    $ tokenize txt
+
+isPreDocOrToken :: Token -> Bool
+isPreDocOrToken (Token _) = True
+isPreDocOrToken (Comment PreDoc _) = True
+isPreDocOrToken _ = False
+
+-- | Type of comment, determined by the presence of @|@ or @^@ after @-- @.
+data CommentStyle = NonDoc
+                    -- ^ No @|@ or @^@.
+                  | PreDoc
+                    -- ^ Documentation comment before declaration (@-- |@).
+                  | PostDoc
+                    -- ^ Documentation comment after declaration (@-- ^@).
+  deriving (Show, Eq)
 
 -- | A token used by the parser.
-data Token = Token Text    -- ^ @Token tok@ is token @tok@ already unquoted.
-           | DocComment Text -- ^ @DocComment@ is a documentation comment, unmodified.
+data Token = Token Text
+           -- ^ @Token tok@ is token @tok@ already unquoted.
+           | Comment CommentStyle Text
+           -- ^ @Comment@ is a comment could be part of a documentation comment.
   deriving (Show, Eq)
+
+commentPrefix :: CommentStyle -> Text
+commentPrefix NonDoc = "-- "
+commentPrefix PreDoc = "-- | "
+commentPrefix PostDoc = "-- ^ "
 
 tokenText :: Token -> Text
 tokenText tok =
     case tok of
         Token t -> t
-        DocComment t -> "-- | " <> t
+        Comment style t -> commentPrefix style <> t
 
 parseIndentationAmount :: Text -> Int
 parseIndentationAmount txt =
@@ -238,8 +263,9 @@ parseIndentationAmount txt =
 tokenize :: Text -> [Token]
 tokenize t
     | T.null t = []
-    | Just txt <- T.stripPrefix "-- |" t = [DocComment (T.stripStart txt)]
-    | "--" `T.isPrefixOf` t = [] -- Comment until the end of the line.
+    | Just txt <- T.stripPrefix "-- |" t = [Comment PreDoc (T.stripStart txt)]
+    | Just txt <- T.stripPrefix "-- ^" t = [Comment PostDoc (T.stripStart txt)]
+    | Just txt <- T.stripPrefix "--" t = [Comment NonDoc (T.stripStart txt)]
     | "#" `T.isPrefixOf` t = [] -- Also comment to the end of the line, needed for a CPP bug (#110)
     | T.head t == '"' = quotes (T.tail t) id
     | T.head t == '(' = parens 1 (T.tail t) id
@@ -349,12 +375,6 @@ toParsedEntityDef lwc = ParsedEntityDef
     (attribs, extras) =
         parseEntityFields fieldLines
 
-isDocComment :: Token -> Maybe Text
-isDocComment tok =
-    case tok of
-        DocComment txt -> Just txt
-        _ -> Nothing
-
 data LinesWithComments = LinesWithComments
     { lwcLines :: NonEmpty Line
     , lwcComments :: [Text]
@@ -395,10 +415,13 @@ associateLines lines =
             [] ->
                 [newLine line]
             (lwc : lwcs) ->
-                case isDocComment (NEL.head (tokens line)) of
-                    Just comment
+                case NEL.head (tokens line) of
+                    Comment PreDoc comment
                         | lineIndent line == lowestIndent lines ->
                         consComment comment lwc : lwcs
+                    Comment style _
+                        | style /= PreDoc ->
+                        lwc : lwcs
                     _ ->
                         if lineIndent line <= lineIndent (firstLine lwc)
                             && lineIndent (firstLine lwc) /= lowestIndent lines
@@ -823,9 +846,9 @@ associateComments
     -> [Token]
     -> ([UnboundFieldDef], [Text])
     -> ([UnboundFieldDef], [Text])
-associateComments ps x (!acc, !comments) =
+associateComments ps toks (!acc, !comments) =
     case listToMaybe x of
-        Just (DocComment comment) ->
+        Just (Comment PreDoc comment) ->
             (acc, comment : comments)
         _ ->
             case (setFieldComments (reverse comments) <$> takeColsEx ps (tokenText <$> x)) of
@@ -833,6 +856,8 @@ associateComments ps x (!acc, !comments) =
                   (sm : acc, [])
               Nothing ->
                   (acc, [])
+  where
+    x = filter isPreDocOrToken toks
 
 setFieldComments :: [Text] -> UnboundFieldDef -> UnboundFieldDef
 setFieldComments xs fld =
