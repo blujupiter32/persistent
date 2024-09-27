@@ -423,8 +423,9 @@ AnotherVeryLongTableName
 These options affects how a referring record behaves when the target record is changed.
 There are several options:
 
-* 'Restrict' - This is the default. It prevents the action from occurring.
-* 'Cascade' - this copies the change to the child record. If a parent record is deleted, then the child record will be deleted too.
+* 'NoAction' - This is the default since 2.15.0.0. It checks constraints at the end of the transaction, aborting it if a violation is found.
+* 'Restrict' - This is the default prior to 2.15.0.0. It immediately checks constraints, aborting the transaction if a violation is found.
+* 'Cascade' - This copies the change to the child record. If a parent record is deleted, then the child record will be deleted too.
 * 'SetNull' - If the parent record is modified, then this sets the reference to @NULL@. This only works on @Maybe@ foreign keys.
 * 'SetDefault' - This will set the column's value to the @default@ for the column, if specified.
 
